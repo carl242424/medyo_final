@@ -18,12 +18,17 @@ public class EnemyHealthBar : MonoBehaviour
     private RectTransform fgRect;
     private TextMeshProUGUI levelText;
     private TextMeshProUGUI hpText;
+    private TextMeshProUGUI nameText;
+    private Image bgImg;
+    private Image fgImg;
     private Damageable damageable;
+    private EnemyStats enemyStats;
     private Vector3 lastParentScale = Vector3.one;
 
     private void Start()
     {
         damageable = GetComponent<Damageable>();
+        enemyStats = GetComponent<EnemyStats>();
         CreateUI();
     }
 
@@ -58,23 +63,50 @@ public class EnemyHealthBar : MonoBehaviour
 
         RectTransform rootRt = uiRoot.GetComponent<RectTransform>();
         // Add width to the root to accommodate the level text on the left
-        rootRt.sizeDelta = new Vector2(size.x + 1.0f, size.y); 
+        rootRt.sizeDelta = new Vector2(size.x + 1.0f, size.y + 0.3f);
 
-        // 2. Background Bar
+        // 2. Enemy Name Text (above the bar)
+        GameObject nameObj = new GameObject("NameText");
+        nameObj.transform.SetParent(uiRoot.transform, false);
+        nameText = nameObj.AddComponent<TextMeshProUGUI>();
+        
+        nameText.alignment = TextAlignmentOptions.Center;
+        nameText.color = Color.white;
+        nameText.fontSize = size.y * 0.6f;
+        nameText.textWrappingMode = TextWrappingModes.NoWrap;
+
+        RectTransform nameRect = nameObj.GetComponent<RectTransform>();
+        nameRect.anchorMin = new Vector2(0.5f, 1f);
+        nameRect.anchorMax = new Vector2(0.5f, 1f);
+        nameRect.pivot = new Vector2(0.5f, 1f);
+        nameRect.anchoredPosition = new Vector2(0, 0);
+        nameRect.sizeDelta = new Vector2(size.x, size.y * 0.5f);
+
+        if (enemyStats != null)
+        {
+            nameText.text = enemyStats.enemyName;
+        }
+        else
+        {
+            nameText.text = "Enemy";
+        }
+
+        // 3. Background Bar
         GameObject bg = new GameObject("BG");
         bg.transform.SetParent(uiRoot.transform, false);
-        Image bgImg = bg.AddComponent<Image>();
+        bgImg = bg.AddComponent<Image>();
         bgImg.color = backgroundColor;
         bgRect = bg.GetComponent<RectTransform>();
         bgRect.anchorMin = new Vector2(0.5f, 0.5f);
         bgRect.anchorMax = new Vector2(0.5f, 0.5f);
         bgRect.pivot = new Vector2(0.5f, 0.5f);
         bgRect.sizeDelta = size;
+        bgRect.anchoredPosition = new Vector2(0, -0.15f);
 
-        // 3. Foreground (Health Fill)
+        // 4. Foreground (Health Fill)
         GameObject fg = new GameObject("FG");
         fg.transform.SetParent(bg.transform, false);
-        Image fgImg = fg.AddComponent<Image>();
+        fgImg = fg.AddComponent<Image>();
         fgImg.color = foregroundColor;
         fgRect = fg.GetComponent<RectTransform>();
         fgRect.anchorMin = new Vector2(0, 0);
@@ -83,9 +115,9 @@ public class EnemyHealthBar : MonoBehaviour
         fgRect.sizeDelta = Vector2.zero; 
         fgRect.localScale = new Vector3(1f, 1f, 1f);
 
-        // 4. Level Text
+        // 5. Level Text
         GameObject lt = new GameObject("LevelText");
-        lt.transform.SetParent(bg.transform, false); // Parent to BG so it's relative to the bar
+        lt.transform.SetParent(bg.transform, false);
         levelText = lt.AddComponent<TextMeshProUGUI>();
         
         levelText.alignment = TextAlignmentOptions.Right; 
@@ -94,14 +126,13 @@ public class EnemyHealthBar : MonoBehaviour
         levelText.textWrappingMode = TextWrappingModes.NoWrap;
 
         RectTransform ltrt = lt.GetComponent<RectTransform>();
-        ltrt.anchorMin = new Vector2(0f, 0.5f); // Anchor to left of bar
+        ltrt.anchorMin = new Vector2(0f, 0.5f);
         ltrt.anchorMax = new Vector2(0f, 0.5f);
-        ltrt.pivot = new Vector2(1f, 0.5f);    // Pivot on the right of the text box
-        
-        ltrt.anchoredPosition = new Vector2(-0.05f, 0f); // Slight gap to the left
+        ltrt.pivot = new Vector2(1f, 0.5f);
+        ltrt.anchoredPosition = new Vector2(-0.05f, 0f);
         ltrt.sizeDelta = new Vector2(1.0f, size.y);
 
-        // 4b. HP Text (centered on the bar)
+        // 6. HP Text (centered on the bar)
         GameObject ht = new GameObject("HPText");
         ht.transform.SetParent(bg.transform, false);
         hpText = ht.AddComponent<TextMeshProUGUI>();
@@ -117,13 +148,14 @@ public class EnemyHealthBar : MonoBehaviour
         htrt.offsetMin = Vector2.zero;
         htrt.offsetMax = Vector2.zero;
 
-        // 5. Add Billboard Script
+        // 7. Add Billboard Script
         uiRoot.AddComponent<FaceCamera>();
 
         if (damageable != null)
             UpdateBar(damageable.Health, damageable.MaxHealth);
 
         UpdateLevelText();
+        UpdateLevelGapColor();
     }
 
     private void OnHPChanged(int newHP, int maxHP) => UpdateBar(newHP, maxHP);
@@ -140,6 +172,9 @@ public class EnemyHealthBar : MonoBehaviour
                 uiRoot.transform.localScale = new Vector3(Mathf.Sign(transform.localScale.x), 1f, 1f);
             }
         }
+
+        // Update level gap color in case player level changes
+        UpdateLevelGapColor();
     }
 
     private void UpdateBar(int hp, int maxHp)
@@ -164,5 +199,45 @@ public class EnemyHealthBar : MonoBehaviour
             int lvl = (stats != null) ? stats.level : 1;
             levelText.text = "Lv " + lvl;
         }
+    }
+
+    private void UpdateLevelGapColor()
+    {
+        if (enemyStats == null || bgImg == null || fgImg == null)
+            return;
+
+        // Get player level
+        ExpSystem expSystem = GameObject.Find("Player")?.GetComponent<ExpSystem>();
+        if (expSystem == null)
+            return;
+
+        int playerLevel = expSystem.level;
+        EnemyStats.LevelGapColor gapColor = enemyStats.GetLevelGapColor(playerLevel);
+        
+        Color barColor;
+        Color textColor;
+
+        switch (gapColor)
+        {
+            case EnemyStats.LevelGapColor.Green:
+                barColor = new Color(0f, 1f, 0f, 0.8f);  // Bright green
+                textColor = Color.green;
+                break;
+            case EnemyStats.LevelGapColor.Yellow:
+                barColor = new Color(1f, 1f, 0f, 0.8f);  // Bright yellow
+                textColor = Color.yellow;
+                break;
+            case EnemyStats.LevelGapColor.Red:
+                barColor = new Color(1f, 0f, 0f, 0.8f);  // Bright red
+                textColor = Color.red;
+                break;
+            default:
+                barColor = new Color(1f, 1f, 0f, 0.8f);
+                textColor = Color.yellow;
+                break;
+        }
+
+        fgImg.color = barColor;
+        levelText.color = textColor;
     }
 }

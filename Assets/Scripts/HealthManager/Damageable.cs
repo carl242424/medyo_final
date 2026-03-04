@@ -16,6 +16,9 @@ public class Damageable : MonoBehaviour
     [SerializeField] private int _health = 100;
     private float timeSinceHit = 0;
     public float invincibilityTime = 1f;
+    
+    // Enemy defense multiplier based on level gap
+    private float enemyDefenseMultiplier = 1f;
 
     public UnityEvent<int, Vector2> damageableHit;
     public UnityEvent<int, int> healthChanged;
@@ -84,6 +87,13 @@ public class Damageable : MonoBehaviour
     {
         if(IsAlive && !isInvincible)
         {
+            // Apply enemy defense multiplier to reduce damage (only for enemies)
+            EnemyStats enemyStats = GetComponent<EnemyStats>();
+            if (enemyStats != null)
+            {
+                damage = Mathf.RoundToInt(damage * enemyDefenseMultiplier);
+            }
+
             Health -= damage;
 
             // Health can't drop below 0
@@ -148,20 +158,23 @@ public class Damageable : MonoBehaviour
                 }
             }
 
-            // Map level to HP (use the values on EnemyStats)
-            int assignedHP = stats.hpLevel1;
-            switch (stats.level)
+            // Get player level for stat multiplier
+            int playerLevel = 1;
+            ExpSystem expSystem = GameObject.Find("Player").GetComponent<ExpSystem>();
+            if (expSystem != null)
             {
-                case 1:
-                    assignedHP = stats.hpLevel1;
-                    break;
-                case 2:
-                    assignedHP = stats.hpLevel2;
-                    break;
-                case 3:
-                    assignedHP = stats.hpLevel3;
-                    break;
+                playerLevel = expSystem.level;
             }
+
+            // Store damage multiplier for when player hits this enemy
+            enemyDefenseMultiplier = stats.GetDamageMultiplier(playerLevel);
+
+            // HP = 25 + (level × 12), then × typeMultiplier × hpMultiplier
+            int baseHP = stats.GetBaseHP();
+            float typeMult = stats.GetTypeMultiplier();
+            float hpMult = stats.GetHPMultiplier(playerLevel);
+            int assignedHP = Mathf.RoundToInt(baseHP * typeMult * hpMult);
+            assignedHP = Mathf.Max(1, assignedHP);
 
             MaxHealth = assignedHP;
             Health = MaxHealth;

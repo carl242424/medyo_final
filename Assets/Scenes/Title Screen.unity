@@ -1394,6 +1394,7 @@ GameObject:
   - component: {fileID: 2052180747}
   - component: {fileID: 2052180746}
   - component: {fileID: 2052180745}
+  - component: {fileID: 2052180749}
   m_Layer: 5
   m_Name: StartButton
   m_TagString: Untagged
@@ -1478,9 +1479,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2052180745}
-        m_TargetAssemblyTypeName: SceneMoveButton, Assembly-CSharp
-        m_MethodName: LoadLevel
+      - m_Target: {fileID: 2052180749}
+        m_TargetAssemblyTypeName: NicknamePrompt, Assembly-CSharp
+        m_MethodName: ShowNicknamePanel
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1528,6 +1529,24 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2052180743}
   m_CullTransparentMesh: 1
+--- !u!114 &2052180749
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2052180743}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 78735340ec3f6a1458253741a0aa6a51, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sceneBuildIndex: 2
+  nicknamePanel: {fileID: 0}
+  nicknameInput: {fileID: 0}
+  legacyInputField: {fileID: 0}
+  confirmButton: {fileID: 0}
+  hideWhenPromptShown: []
 --- !u!1 &2073800685
 GameObject:
   m_ObjectHideFlags: 0

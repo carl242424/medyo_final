@@ -10,14 +10,43 @@ public class Interactable : MonoBehaviour
     public UnityEvent interactAction;
     public GameObject pressE;
 
+    private PlayerInput playerInput;
+
     private void Start()
     {
         pressE.SetActive(false);
+        StartCoroutine(SubscribeToPlayerInputWhenReady());
     }
 
-    public void OnInteract(InputAction.CallbackContext context)
+    private IEnumerator SubscribeToPlayerInputWhenReady()
     {
-        if (context.started && isInRange)
+        for (int i = 0; i < 30; i++)
+        {
+            var player = GameObject.FindWithTag("Player");
+            if (player != null)
+            {
+                playerInput = player.GetComponent<PlayerInput>();
+                if (playerInput != null)
+                {
+                    playerInput.actions["Player/Interact"].started += OnInteract;
+                    yield break;
+                }
+            }
+            yield return null;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (playerInput != null)
+        {
+            playerInput.actions["Player/Interact"].started -= OnInteract;
+        }
+    }
+
+    private void OnInteract(InputAction.CallbackContext context)
+    {
+        if (isInRange)
         {
             interactAction.Invoke();
         }

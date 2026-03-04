@@ -12,6 +12,9 @@ EditorBuildSettings:
     path: Assets/Scenes/Control Screen.unity
     guid: 6ca8871d30c085d4d9ad204e3bd9b649
   - enabled: 1
+    path: Assets/Scenes/Level Selection.unity
+    guid: 6c9590c4b0bee1e4ebdfa7a5fdfa97d6
+  - enabled: 1
     path: Assets/Scenes/World Demo 1-1.unity
     guid: 6478f39aa01ddd14c8f784f87932ef56
   - enabled: 1
@@ -29,5 +32,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/End Screen.unity
     guid: be911ac9b5afdda438472d7578420f5e
+  - enabled: 1
+    path: Assets/Scenes/DeepForest.unity
+    guid: c78de4b05d2ad824f99a8364764983ef
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0

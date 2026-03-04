@@ -114,11 +114,11 @@ public class Knight : MonoBehaviour
         animator = GetComponent<Animator>();
         damageable = GetComponent<Damageable>();
         
-        // Assign level if not already set
+        // Always randomize level when entering world
         EnemyStats stats = GetComponent<EnemyStats>();
-        if (stats != null && stats.level < 1)
+        if (stats != null)
         {
-            stats.level = UnityEngine.Random.Range(1, 4); // Assigns level 1, 2, or 3
+            stats.level = UnityEngine.Random.Range(1, 4); // Randomizes level 1, 2, or 3
         }
     }
 

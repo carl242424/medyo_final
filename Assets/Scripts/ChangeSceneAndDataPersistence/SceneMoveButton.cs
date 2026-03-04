@@ -15,11 +15,14 @@ public class SceneMoveButton : MonoBehaviour
     private void Start()
     {
         button = GetComponent<Button>();
-        buttonText = GetComponentInChildren<Text>();
+        if (button == null) return;
+        buttonText = GetComponentInChildren<Text>(); // Optional; may be null if using TextMeshPro
     }
 
+    /// <summary>Called by UI Button onClick. Works with Standalone Input Module (touch on Android).</summary>
     public void LoadLevel()
     {
+        if (sceneBuildIndex < 0) return;
         DontDestroy.DestroyPersistingObjects();
         SceneManager.LoadScene(sceneBuildIndex, LoadSceneMode.Single);
     }

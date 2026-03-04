@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using TMPro;
 using static UnityEngine.Rendering.DebugUI;
 
 public class InventoryManager : MonoBehaviour
@@ -20,12 +21,58 @@ public class InventoryManager : MonoBehaviour
 
     public ItemSO[] itemSOs;
 
+    private PlayerInput playerInput;
+
     private void Start()
     {
         uiManager = GameObject.Find("UIManager").GetComponent<UIManager>();
+        UpdatePlayerNameDisplay();
+        StartCoroutine(SubscribeToPlayerInputWhenReady());
     }
 
-    public void OnInventoryOpen(InputAction.CallbackContext context)
+    private void UpdatePlayerNameDisplay()
+    {
+        foreach (var tmp in GetComponentsInChildren<TextMeshProUGUI>(true))
+        {
+            if (tmp.gameObject.name == "Name")
+            {
+                tmp.text = PlayerNickname.Get();
+                break;
+            }
+        }
+    }
+
+    private IEnumerator SubscribeToPlayerInputWhenReady()
+    {
+        // Retry in case Player spawns after us (e.g. level load)
+        for (int i = 0; i < 30; i++)
+        {
+            var player = GameObject.FindWithTag("Player");
+            if (player != null)
+            {
+                playerInput = player.GetComponent<PlayerInput>();
+                if (playerInput != null)
+                {
+                    playerInput.actions.FindActionMap("UI").Enable();
+                    playerInput.actions["UI/Inventory"].started += OnInventoryOpen;
+                    playerInput.actions["UI/Equipment"].started += OnEquipmentOpen;
+                    yield break;
+                }
+            }
+            yield return null;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (playerInput != null)
+        {
+            playerInput.actions["UI/Inventory"].started -= OnInventoryOpen;
+            playerInput.actions["UI/Equipment"].started -= OnEquipmentOpen;
+        }
+    }
+
+    private void OnInventoryOpen(InputAction.CallbackContext context)
     {
         if (context.started && InventoryMenu.activeSelf && canAccess)
         {
@@ -47,7 +94,7 @@ public class InventoryManager : MonoBehaviour
         }
     }
 
-    public void OnEquipmentOpen(InputAction.CallbackContext context)
+    private void OnEquipmentOpen(InputAction.CallbackContext context)
     {
         if (context.started && EquipmentMenu.activeSelf && canAccess)
         {

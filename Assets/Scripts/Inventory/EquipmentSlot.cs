@@ -40,7 +40,48 @@ public class EquipmentSlot : MonoBehaviour, IPointerClickHandler
     {
         inventoryManager = GameObject.Find("InventoryCanvas").GetComponent<InventoryManager>();
         equipmentSOLibrary = GameObject.Find("InventoryCanvas").GetComponent<EquipmentSOLibrary>();
+        
+        FindEquippedSlots();
+    }
 
+    private void OnEnable()
+    {
+        // Re-find slots when menu opens (EquipmentMenu starts inactive)
+        if (inventoryManager != null)
+            FindEquippedSlots();
+    }
+
+    private void FindEquippedSlots()
+    {
+        // Include inactive - EquipmentMenu starts disabled, so slots are inactive at Start
+        EquippedSlot[] allSlots = GameObject.Find("InventoryCanvas").GetComponentsInChildren<EquippedSlot>(true);
+        
+        foreach (EquippedSlot slot in allSlots)
+        {
+            string slotName = slot.gameObject.name.ToLower();
+            
+            if (slotName.Contains("helmet"))
+                helmetSlot = slot;
+            else if (slotName.Contains("armor"))
+                armorSlot = slot;
+            else if (slotName.Contains("accessory"))
+                accessorySlot = slot;
+            else if (slotName.Contains("subweapon") || slotName.Contains("sub"))
+                subWeaponSlot = slot;
+            else if (slotName.Contains("weapon") && !slotName.Contains("sub"))
+                weaponSlot = slot;
+            else if (slotName.Contains("fire"))
+                artifactFireSlot = slot;
+            else if (slotName.Contains("wind"))
+                artifactWindSlot = slot;
+            else if (slotName.Contains("electric"))
+                artifactElectricSlot = slot;
+        }
+        
+#if UNITY_EDITOR
+        if (helmetSlot == null || armorSlot == null || weaponSlot == null)
+            Debug.LogWarning("EquipmentSlot: Some equipped slots were not found. Check InventoryCanvas hierarchy and slot names.");
+#endif
     }
 
     public int AddItem(string itemName, int quantity, Sprite itemSprite, string itemDescription, ItemType itemType)
@@ -86,20 +127,17 @@ public class EquipmentSlot : MonoBehaviour, IPointerClickHandler
         {
             if (thisItemSelected)
             {
-                if (equipmentDescriptionPanel != null && equipmentDescriptionPanel.activeSelf)
-                {
-                    equipmentDescriptionPanel.SetActive(false);
-                    inventoryManager.DeselectAllSlots();
-                    GameObject.Find("StatManager").GetComponent<PlayerStats>().TurnOffPreviewStats();
-                    EquipGear();
-                }
-                else
-                {
-                    equipmentDescriptionPanel.SetActive(true);
-                }
+                // Second click (or first if already selected): equip immediately
+                equipmentDescriptionPanel?.SetActive(false);
+                inventoryManager.DeselectAllSlots();
+                var statManager = GameObject.Find("StatManager");
+                if (statManager != null)
+                    statManager.GetComponent<PlayerStats>().TurnOffPreviewStats();
+                EquipGear();
             }
             else
             {
+                // First click: select item and show description
                 inventoryManager.DeselectAllSlots();
                 selectedShader.SetActive(true);
                 thisItemSelected = true;
@@ -108,75 +146,65 @@ public class EquipmentSlot : MonoBehaviour, IPointerClickHandler
                     if (equipmentSOLibrary.equipmentSO[i].itemName == this.itemName)
                     {
                         equipmentSOLibrary.equipmentSO[i].PreviewEquipment();
+                        break;
                     }
                 }
-                equipmentDescriptionPanel.SetActive(true);
+                if (equipmentDescriptionPanel != null)
+                    equipmentDescriptionPanel.SetActive(true);
             }
             ItemDescriptionNameText.text = itemName;
             ItemDescriptionText.text = itemDescription;
             ItemDescriptionImage.sprite = itemSprite;
             if (ItemDescriptionImage == null)
-            {
                 ItemDescriptionImage.sprite = emptySprite;
-            }
         }
         else
         {
-            GameObject.Find("StatManager").GetComponent<PlayerStats>().TurnOffPreviewStats();
+            GameObject.Find("StatManager")?.GetComponent<PlayerStats>()?.TurnOffPreviewStats();
             inventoryManager.DeselectAllSlots();
             selectedShader.SetActive(true);
             thisItemSelected = true;
-            equipmentDescriptionPanel.SetActive(false);
+            equipmentDescriptionPanel?.SetActive(false);
         }
     }
 
     private void EquipGear()
     {
-        equipmentDescriptionPanel.SetActive(false);
+        equipmentDescriptionPanel?.SetActive(false);
+        bool equipped = false;
+        
         switch (itemType)
         {
             case ItemType.helmet:
-                {
-                    helmetSlot.EquipGear(itemSprite, itemName, itemDescription);
-                    break;
-                }
+                if (helmetSlot != null) { helmetSlot.EquipGear(itemSprite, itemName, itemDescription); equipped = true; }
+                break;
             case ItemType.armor:
-                {
-                    armorSlot.EquipGear(itemSprite, itemName, itemDescription);
-                    break;
-                }
+                if (armorSlot != null) { armorSlot.EquipGear(itemSprite, itemName, itemDescription); equipped = true; }
+                break;
             case ItemType.accessory:
-                {
-                    accessorySlot.EquipGear(itemSprite, itemName, itemDescription);
-                    break;
-                }
+                if (accessorySlot != null) { accessorySlot.EquipGear(itemSprite, itemName, itemDescription); equipped = true; }
+                break;
             case ItemType.subWeapon:
-                {
-                    subWeaponSlot.EquipGear(itemSprite, itemName, itemDescription);
-                    break;
-                }
+                if (subWeaponSlot != null) { subWeaponSlot.EquipGear(itemSprite, itemName, itemDescription); equipped = true; }
+                break;
             case ItemType.weapon:
-                {
-                    weaponSlot.EquipGear(itemSprite, itemName, itemDescription);
-                    break;
-                }
+                if (weaponSlot != null) { weaponSlot.EquipGear(itemSprite, itemName, itemDescription); equipped = true; }
+                break;
             case ItemType.artifactFire:
-                {
-                    artifactFireSlot.EquipGear(itemSprite, itemName, itemDescription);
-                    break;
-                }
+                if (artifactFireSlot != null) { artifactFireSlot.EquipGear(itemSprite, itemName, itemDescription); equipped = true; }
+                break;
             case ItemType.artifactWind:
-                {
-                    artifactWindSlot.EquipGear(itemSprite, itemName, itemDescription);
-                    break;
-                }
+                if (artifactWindSlot != null) { artifactWindSlot.EquipGear(itemSprite, itemName, itemDescription); equipped = true; }
+                break;
             case ItemType.artifactElectric:
-                {
-                    artifactElectricSlot.EquipGear(itemSprite, itemName, itemDescription);
-                    break;
-                }
+                if (artifactElectricSlot != null) { artifactElectricSlot.EquipGear(itemSprite, itemName, itemDescription); equipped = true; }
+                break;
         }
-        EmptySlot();
+        
+        if (equipped)
+            EmptySlot();
+        else
+            Debug.LogError($"EquipmentSlot: Could not equip {itemName} - target slot for {itemType} is null. Check FindEquippedSlots.");
     }
 
     private void EmptySlot()
@@ -198,7 +226,47 @@ public class EquipmentSlot : MonoBehaviour, IPointerClickHandler
 
     public void OnRightClick()
     {
+        if (!isFull) return;
+        
+        // Right-click on equipment = equip immediately (easier than double-click)
+        if (itemType != ItemType.consumable && itemType != ItemType.collectible && itemType != ItemType.none)
+        {
+            equipmentDescriptionPanel?.SetActive(false);
+            inventoryManager.DeselectAllSlots();
+            GameObject.Find("StatManager")?.GetComponent<PlayerStats>()?.TurnOffPreviewStats();
+            EquipGear();
+            return;
+        }
+        
+        // Right-click on consumable/collectible = drop
         GameObject itemToDrop = new GameObject(itemName);
+        
+        // Add Rigidbody2D FIRST so ItemDrop can find it
+        Rigidbody2D rb = itemToDrop.AddComponent<Rigidbody2D>();
+        rb.gravityScale = 1f;
+        
+        // Add collider
+        BoxCollider2D collider = itemToDrop.AddComponent<BoxCollider2D>();
+        collider.isTrigger = false;
+        
+        // Add ItemDrop (uses Rigidbody2D in Start)
+        itemToDrop.AddComponent<ItemDrop>();
+        
+        // Create Sprite Renderer with sprite
+        SpriteRenderer sr = itemToDrop.AddComponent<SpriteRenderer>();
+        if (itemSprite != null)
+        {
+            sr.sprite = itemSprite;
+        }
+        else
+        {
+            Debug.LogWarning($"Item {itemName} has no sprite!");
+            sr.sprite = emptySprite;
+        }
+        sr.sortingOrder = 5;
+        sr.sortingLayerName = "Ground";
+        
+        // Add Item component with data
         Item newItem = itemToDrop.AddComponent<Item>();
         newItem.quantity = 1;
         newItem.itemName = itemName;
@@ -206,19 +274,11 @@ public class EquipmentSlot : MonoBehaviour, IPointerClickHandler
         newItem.itemDescription = itemDescription;
         newItem.itemType = this.itemType;
 
-        // Create and modify the Sprite Renderer
-        SpriteRenderer sr = itemToDrop.AddComponent<SpriteRenderer>();
-        sr.sprite = itemSprite;
-        sr.sortingOrder = 5;
-        sr.sortingLayerName = "Ground";
-
-        // Add a collider and set the location
-        itemToDrop.AddComponent<BoxCollider2D>();
+        // Set position and scale
         itemToDrop.transform.position = GameObject.FindWithTag("Player").transform.position + new Vector3(1f, 0, 0);
-        // If there is a need to change the size of the dropped item
         itemToDrop.transform.localScale = new Vector3(1f, 1f, 1f);
 
-        // Remove the item
+        // Remove the item from inventory
         this.quantity -= 1;
         if (this.quantity <= 0)
         {
